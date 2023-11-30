@@ -17,6 +17,7 @@ use Nacos\Models\BeatResult;
 use Nacos\Models\Config;
 use Nacos\Models\ServiceInstance;
 use Nacos\Models\ServiceInstanceList;
+use Nacos\Traits\AccessToken;
 
 class NacosClient
 {
@@ -94,16 +95,16 @@ class NacosClient
             $options['timeout'] = $this->timeout;
         }
 
-        if (!isset($this->accessToken)) {
-            $options['Authorization'] = 'Bearer ' . $this->accessToken;
+        if (isset($this->accessToken)) {
+            $options['headers'] = [
+                'Authorization' => 'Bearer ' . $this->accessToken
+            ];
         }
 
         $client = new Client([
             'base_uri' => "http://{$this->host}:{$this->port}",
             'timeout' => $this->timeout
         ]);
-
-        var_dump(options);
 
         try {
 
@@ -152,7 +153,7 @@ class NacosClient
 
         $this->accessToken = $content['accessToken'];
         $this->expireTime = $content['tokenTtl'];
-
+        
         return $res;
     }
 
@@ -360,12 +361,15 @@ class NacosClient
      */
     public function getInstanceList(
         string $serviceName,
+        string $groupName,
         string $namespaceId = null,
         array $clusters = [],
         bool $healthyOnly = false
     ) {
+
         $query = array_filter([
             'serviceName' => $serviceName,
+            'groupName' => $groupName,
             'namespaceId' => $namespaceId,
             'clusters' => join(',', $clusters),
             'healthyOnly' => $healthyOnly,
@@ -377,13 +381,13 @@ class NacosClient
         ]);
 
         $data = json_decode((string)$resp->getBody(), true);
-
         if (404 === $resp->getStatusCode()) {
             throw new NacosNamingNotFound(
                 "service not found: $serviceName",
                 404
             );
         }
+
         return new ServiceInstanceList($data);
     }
 
