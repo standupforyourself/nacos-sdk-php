@@ -95,7 +95,7 @@ class NacosClient
         }
 
         if (!isset($this->accessToken)) {
-            $options['Authorization'] = 'Bearer ' . $this->accessToken,
+            $options['Authorization'] = 'Bearer ' . $this->accessToken;
         }
 
         $client = new Client([
