@@ -153,7 +153,7 @@ class NacosClient
         $this->accessToken = $content['accessToken'];
         $this->expireTime = $content['tokenTtl'];
 
-        return $res
+        return $res;
     }
 
     /**
