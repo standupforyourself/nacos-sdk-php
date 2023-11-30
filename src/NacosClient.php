@@ -28,6 +28,8 @@ class NacosClient
     const WORD_SEPARATOR = "\x02";
     const LINE_SEPARATOR = "\x01";
 
+    use AccessToken;
+
     /**
      * @var string
      */
@@ -92,18 +94,28 @@ class NacosClient
             $options['timeout'] = $this->timeout;
         }
 
+        if (!isset($this->accessToken)) {
+            $options['Authorization'] = 'Bearer ' . $this->accessToken,
+        }
+
         $client = new Client([
             'base_uri' => "http://{$this->host}:{$this->port}",
             'timeout' => $this->timeout
         ]);
 
+        var_dump(options);
+
         try {
+
             $resp = $client->request($method, $uri, $options);
         } catch (ConnectException $connectException) {
+
             throw new NacosConnectionException("[Nacos Server] " . $connectException->getMessage());
         } catch (RequestException $exception) {
+
             throw new NacosRequestException($exception->getMessage());
         }
+
         if (404 === $resp->getStatusCode()) {
             throw new NacosConfigNotFound($resp->getReasonPhrase());
         }
@@ -134,7 +146,14 @@ class NacosClient
                 404
             );
         }
-        return $resp->getBody()->getContents();
+
+        $res =  $resp->getBody()->getContents();
+        $content = json_decode($res, true);
+
+        $this->accessToken = $content['accessToken'];
+        $this->expireTime = $content['tokenTtl'];
+
+        return $res
     }
 
     /**
